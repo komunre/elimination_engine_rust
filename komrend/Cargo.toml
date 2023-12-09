@@ -1,0 +1,22 @@
+[package]
+name = "komrend"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ab_glyph = "0.2.23"
+imgui = "*"
+png = "*"
+gl = "*"
+glam = "*"
+ambisonic = "0.4.0"
+blend = "0.8"
+
+[dependencies.glfw]
+version = "0.54"
+
+[dependencies.gltf]
+version = "1.2"
+features = ["extras", "names"]

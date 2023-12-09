@@ -1,0 +1,5 @@
+{
+    "rust-analyzer.linkedProjects": [
+        ".\\bmp_reader\\Cargo.toml"
+    ]
+}
