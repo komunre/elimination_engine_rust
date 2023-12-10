@@ -1,6 +1,7 @@
 {
     "rust-analyzer.linkedProjects": [
         ".\\bmp_reader\\Cargo.toml",
-        ".\\komrend\\Cargo.toml"
+        ".\\komrend\\Cargo.toml",
+        ".\\Cargo.toml"
     ]
 }
