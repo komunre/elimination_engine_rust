@@ -1,7 +1,7 @@
 extern crate glfw;
 extern crate gl;
 
-use glfw::{Action, Context, Key, fail_on_errors, PWindow, Glfw, InitError, WindowEvent, GlfwReceiver};
+use glfw::{Action, Context, Key, fail_on_errors, PWindow, Glfw, InitError, WindowEvent, GlfwReceiver, ffi::{glfwTerminate, glfwSwapBuffers, glfwInit, glfwWindowHint, GLFWwindow, glfwCreateWindow, glfwMakeContextCurrent, glfwSetFramebufferSizeCallback, glfwGetProcAddress, glfwPollEvents, glfwGetFramebufferSize, glfwWindowShouldClose}};
 
 pub enum ShaderType {
     VERTEX,
@@ -10,41 +10,41 @@ pub enum ShaderType {
 }
 
 pub struct Komrend {
-    glfw_inst: Glfw,
-    window: PWindow,
-    events: GlfwReceiver<(f64, WindowEvent)>,
+    window: *mut GLFWwindow,
     old_size: (i32, i32),
     pub should_close: bool,
 }
 
+extern "C" fn framebuffer_size_callback(win: *mut GLFWwindow, w: i32, h: i32) {
+
+}
+
 pub fn init(w: u32, h: u32, title: &str) -> Result<Komrend, InitError> {
-    let mut glfw_i = match glfw::init(glfw::fail_on_errors!()) {
-        Ok(g) => g,
-        Err(e) => return Err(e)
-    };
-    let (mut win, ev) = match glfw_i.create_window(w, h, title, glfw::WindowMode::Windowed) {
-        Some(win) => win,
-        None => return Err(InitError::Internal),
-    };
+    unsafe {
+        glfwInit();
+        glfwWindowHint(glfw::ffi::CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(glfw::ffi::CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(glfw::ffi::OPENGL_PROFILE, glfw::ffi::OPENGL_CORE_PROFILE);
 
-    win.set_key_polling(true);
-    win.make_current();
+        let win = glfwCreateWindow(w.try_into().unwrap(), h.try_into().unwrap(), std::ffi::CString::new(title).unwrap().as_ptr() as *const core::ffi::c_char, 0 as *mut glfw::ffi::GLFWmonitor, 0 as *mut glfw::ffi::GLFWwindow);
+        // process window error
+        //
+        glfwMakeContextCurrent(win);
+        glfwSetFramebufferSizeCallback(win, Some(framebuffer_size_callback));
+        gl::load_with(|s| glfwGetProcAddress(std::ffi::CString::new(s).unwrap().as_ptr() as *const core::ffi::c_char));
+        gl::Viewport::load_with(|s| glfwGetProcAddress(std::ffi::CString::new(s).unwrap().as_ptr() as *const core::ffi::c_char));
 
-    gl::load_with(|s| glfw_i.get_proc_address_raw(s));
-    gl::Viewport::load_with(|s| glfw_i.get_proc_address_raw(s));
-
-    unsafe {gl::Viewport(0, 0, w as i32, h as i32); };
+        gl::Viewport(0, 0, w as i32, h as i32);
 
     let rend = Komrend {
-        glfw_inst: glfw_i,
         window: win,
-        events: ev,
         old_size: (0, 0),
         should_close: false,
     };
     println!("Komrend successfully initialized");
 
     Ok(rend)
+    }
 }
 
 fn handle_window_event(window: &mut glfw::Window, event: glfw::WindowEvent) {
@@ -90,19 +90,20 @@ pub fn create_shader_program(v: u32, f: u32) -> u32 {
 
 impl Komrend {
     pub fn update(&mut self) {
-        self.glfw_inst.poll_events();
-        for (_, event) in glfw::flush_messages(&self.events) {
-            handle_window_event(&mut self.window, event);
+        unsafe {
+
+        glfwPollEvents();
+        //let size = glfwGetFramebufferSize(self.window, width, height)
+        //if self.old_size != size {
+        //    
+        //    self.old_size = size;
+        //}
+        self.should_close = glfwWindowShouldClose(self.window) == 1;
+
         }
-        let size = self.window.get_framebuffer_size();
-        if self.old_size != size {
-            
-            self.old_size = size;
-        }
-        self.should_close = self.window.should_close();
     }
     pub fn finish(&mut self) {
-        self.window.swap_buffers();
+        unsafe { glfwSwapBuffers(self.window); };
     }
     pub fn clear(&self) {
         unsafe {
@@ -137,6 +138,9 @@ impl Komrend {
             gl::BindVertexArray(vao);
             gl::DrawArrays(gl::TRIANGLES, 0, 3);
         }
+    }
+    pub fn terminate(&mut self) {
+        unsafe {glfwTerminate(); };
     }
 }
 
